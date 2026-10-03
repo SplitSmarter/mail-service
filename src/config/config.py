@@ -2,10 +2,16 @@ import logging
 import os
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
 from dotenv import load_dotenv
 from fastapi import Request
 
-load_dotenv("mail_service_secrets.txt")
+# Local/dev fallback only. Process env (Compose/K8s) wins — load_dotenv does not override.
+_local_secrets = Path("mail_service_secrets.txt")
+if _local_secrets.is_file():
+    load_dotenv(_local_secrets)
+
 
 default_email="info@splitsmarter.app"
 default_email_name="Split Smarter"
@@ -50,15 +56,20 @@ formatter = UTCFormatter(LOG_FORMAT)
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(formatter)
 
-# File handler (optional)
-file_handler = logging.FileHandler("logs/mail-service.log")
-file_handler.setFormatter(formatter)
-
 # Application logger
-logger = logging.getLogger(APP_NAME)
+logger = logging.getLogger(APP_NAME or "mail-service")
 logger.setLevel(logging.INFO)
 logger.addHandler(stream_handler)
-logger.addHandler(file_handler)
+
+# File handler (optional; skip if logs dir cannot be created)
+try:
+    Path("logs").mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler("logs/mail-service.log")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+except OSError:
+    pass
+
 logger.propagate = False
 
 class ContextLoggerAdapter(logging.LoggerAdapter):

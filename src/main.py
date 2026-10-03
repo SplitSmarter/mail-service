@@ -73,7 +73,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.get("/")
-def health_check(request: Request):
+def root_health(request: Request):
     return JSONResponse(
         content={
             "status": "Mail Service is running"
@@ -81,8 +81,13 @@ def health_check(request: Request):
     )
 
 
+@app.get("/health")
+def health(request: Request):
+    return JSONResponse(content={"status": "ok"})
+
+
 @app.get("/test")
-def health_check(request: Request):
+def test_health(request: Request):
     return JSONResponse(
         content={
             "status": "ok"
