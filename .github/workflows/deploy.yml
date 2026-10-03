@@ -1,0 +1,17 @@
+name: Trigger Mail Service Deployment
+
+on:
+  push:
+    branches: [release, main, qa, test, develop, dev]
+  workflow_dispatch:
+
+jobs:
+  call-central-workflow:
+    uses: SplitSmarter/ci-cd-workflows/.github/workflows/python-docker-deploy.yml@main
+    with:
+      branch_name: ${{ github.ref }}
+      service_name: mail-service
+      project_root: "."
+    secrets:
+      GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}

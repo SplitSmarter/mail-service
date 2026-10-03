@@ -1,0 +1,8 @@
+__pycache__
+mail_service_secrets.txt
+logs/**
+.venv
+
+.idea
+
+.pytest_cache
