@@ -5,6 +5,11 @@ on:
     branches: [release, main, qa, test, develop, dev]
   workflow_dispatch:
 
+# Reusable workflows can only use permissions the caller grants.
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   call-central-workflow:
     uses: SplitSmarter/ci-cd-workflows/.github/workflows/python-docker-deploy.yml@main
