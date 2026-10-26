@@ -27,6 +27,8 @@ premailer==3.10.0
 psycopg2-binary==2.9.10
 pydantic==2.13.4
 pydantic_core==2.46.4
+pytest==8.4.2
+pytest-asyncio==1.4.1
 python-dotenv==1.2.2
 python-multipart==0.0.20
 regex==2026.5.9
