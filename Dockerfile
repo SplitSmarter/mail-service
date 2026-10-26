@@ -16,4 +16,8 @@ RUN mkdir -p logs
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8083
 
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:8083/health || exit 1
+
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]
+

@@ -1,8 +1,8 @@
 name: Trigger Mail Service Deployment
 
+# Manual only — does not run on push.
+# Pick the branch via GitHub's "Use workflow from" when running the workflow.
 on:
-  push:
-    branches: [release, main, qa, test, develop, dev]
   workflow_dispatch:
 
 # Reusable workflows can only use permissions the caller grants.

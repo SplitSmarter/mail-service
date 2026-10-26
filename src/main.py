@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from src.exception_handler import register_exception_handlers
 from src.routes.otp import router as otp_router
 from src.routes.auth import router as auth_router
+from src.routes.invite import router as invite_router
 
 
 @asynccontextmanager
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Mail Service", lifespan=lifespan)
 app.include_router(otp_router, prefix="/otp")
 app.include_router(auth_router, prefix="/auth")
+app.include_router(invite_router, prefix="/invite")
 
 register_exception_handlers(app)
 

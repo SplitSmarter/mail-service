@@ -1,7 +1,9 @@
+import json
 import logging
 import os
 import sys
 from datetime import datetime, timezone
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -37,34 +39,44 @@ SMTP2GO_ADMIN_PASSWORD=os.getenv("SMTP2GO_ADMIN_PASSWORD")
 
 # ==== Logging Config ====
 TRACE_ID_KEY = "trace_id"
+SERVICE_NAME = APP_NAME or "mail-service"
 
-class UTCFormatter(logging.Formatter):
-    """Custom UTC formatter for consistent timestamps."""
-    converter = datetime.fromtimestamp
 
-    def formatTime(self, record, datefmt=None):
-        dt = datetime.fromtimestamp(record.created, tz=timezone.utc)
-        if datefmt:
-            return dt.strftime(datefmt)
-        return dt.isoformat()
+class JsonFormatter(logging.Formatter):
+    """One JSON object per line for Alloy / Grafana Loki."""
 
-LOG_FORMAT = "%(asctime)s - %(levelname)s - [trace_id=%(trace_id)s] - %(name)s - %(message)s"
+    def format(self, record: logging.LogRecord) -> str:
+        trace_id = getattr(record, TRACE_ID_KEY, None) or "-"
+        payload = {
+            "ts": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "level": record.levelname,
+            "service": SERVICE_NAME,
+            "trace_id": trace_id,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=False)
 
-formatter = UTCFormatter(LOG_FORMAT)
 
-# Stream handler → stdout (container/docker friendly)
+formatter = JsonFormatter()
+
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(formatter)
 
-# Application logger
-logger = logging.getLogger(APP_NAME or "mail-service")
+logger = logging.getLogger(SERVICE_NAME)
 logger.setLevel(logging.INFO)
 logger.addHandler(stream_handler)
 
-# File handler (optional; skip if logs dir cannot be created)
 try:
     Path("logs").mkdir(parents=True, exist_ok=True)
-    file_handler = logging.FileHandler("logs/mail-service.log")
+    file_handler = RotatingFileHandler(
+        "logs/app.log",
+        maxBytes=10 * 1024 * 1024,
+        backupCount=3,
+        encoding="utf-8",
+    )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 except OSError:

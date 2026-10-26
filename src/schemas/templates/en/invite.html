@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>{{ recipient_name }}, you're invited</h2>
+  <p>{{ inviter_name }} invited you to the {{ target_type }} <strong>{{ target_name }}</strong> on Split Smarter.</p>
+  <p><a href="{{ link }}">Open the invite</a></p>
+  <p>If you were not expecting this, you can ignore this email.</p>
+{% endblock %}
