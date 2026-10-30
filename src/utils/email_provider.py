@@ -6,11 +6,21 @@ from mailersend import emails
 from premailer import transform
 from starlette import status
 
-from src.config.config import MAILERSEND_API_KEY, default_email, default_email_name
+from src.config.config import (
+    BREVO_ENABLED,
+    ELASTIC_EMAIL_ENABLED,
+    GMAIL_ENABLED,
+    MAILERSEND_API_KEY,
+    MAILERSEND_ENABLED,
+    SMTP2GO_ENABLED,
+    default_email,
+    default_email_name,
+)
 from src.dto.base import ErrorResponse
 from src.schemas.email_info import EmailInfo
 from src.schemas.error_codes import ErrorCode, get_error_http_exception
 from src.exceptions.custom_exceptions import MailError
+from src.utils.mail_providers.brevo import send_mail_brevo
 from src.utils.mail_providers.elasticEmail import send_mail_elastic
 from src.utils.mail_providers.googleMail import send_mail_gmail
 from src.utils.mail_providers.mailerSend import send_mail_mailersend
@@ -38,8 +48,8 @@ async def send_email_provider(
         bcc: list[EmailInfo] | None = None,
 ) -> dict:
     """
-    Attempts to send an email using multiple providers sequentially (Gmail, SMTP2Go, ElasticEmail, MailerSend),
-    but without blocking the FastAPI event loop. Each provider runs in a separate thread via asyncio.to_thread().
+    Sends through each enabled provider in order. Brevo is first.
+    SMTP2GO, Gmail, Elastic Email, and MailerSend stay available and run only when their flags are on.
     """
 
     try:
@@ -70,18 +80,18 @@ async def send_email_provider(
                 logger.warning(f"{provider_name} failed: {e}")
             return False
 
-        # Sequentially try each provider (await keeps order, to_thread avoids blocking)
-        if await try_provider(send_mail_smtp_two_go, "smtp2go"):
-            return response
-
-        if await try_provider(send_mail_gmail, "gmail"):
-            return response
-
-        if await try_provider(send_mail_elastic, "elastic_email"):
-            return response
-
-        if await try_provider(send_mail_mailersend, "mailersend"):
-            return response
+        providers = (
+            (BREVO_ENABLED, send_mail_brevo, "brevo"),
+            (SMTP2GO_ENABLED, send_mail_smtp_two_go, "smtp2go"),
+            (GMAIL_ENABLED, send_mail_gmail, "gmail"),
+            (ELASTIC_EMAIL_ENABLED, send_mail_elastic, "elastic_email"),
+            (MAILERSEND_ENABLED, send_mail_mailersend, "mailersend"),
+        )
+        for enabled, func, name in providers:
+            if not enabled:
+                continue
+            if await try_provider(func, name):
+                return response
 
         logger.error("None of the providers were able to send an email")
         raise get_error_http_exception(ErrorCode.INTERNAL_SERVER)
