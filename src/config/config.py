@@ -36,6 +36,23 @@ GMAIL_APP_USER=os.getenv("GMAIL_APP_USER")
 GMAIL_APP_PASSWORD=os.getenv("GMAIL_APP_PASSWORD")
 SMTP2GO_ADMIN_USERNAME=os.getenv("SMTP2GO_ADMIN_USERNAME")
 SMTP2GO_ADMIN_PASSWORD=os.getenv("SMTP2GO_ADMIN_PASSWORD")
+NOTIFY_INBOX=os.getenv("NOTIFY_INBOX", default_email)
+BREVO_API_KEY=os.getenv("BREVO_API_KEY")
+brevo_api_url = "https://api.brevo.com/v3/smtp/email"
+
+
+def _provider_enabled(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip().lower() in {"1", "true", "yes"}
+
+
+BREVO_ENABLED = _provider_enabled("BREVO_ENABLED", True)
+SMTP2GO_ENABLED = _provider_enabled("SMTP2GO_ENABLED", False)
+GMAIL_ENABLED = _provider_enabled("GMAIL_ENABLED", False)
+ELASTIC_EMAIL_ENABLED = _provider_enabled("ELASTIC_EMAIL_ENABLED", False)
+MAILERSEND_ENABLED = _provider_enabled("MAILERSEND_ENABLED", False)
 
 # ==== Logging Config ====
 TRACE_ID_KEY = "trace_id"
